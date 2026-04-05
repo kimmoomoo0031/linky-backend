@@ -62,7 +62,7 @@ class User(Base):
     @validates("nickname")
     def validate_nickname(self, _key: str, nickname: str | None) -> str | None:
         if nickname is not None and (len(nickname) < 2 or len(nickname) > 12):
-            raise ValueError("닉네임은 2~12자")
+            raise ValueError("ニックネームは2〜12文字")
         return nickname
 
     def withdraw(self, reason: str, reason_text: str | None = None) -> None:
