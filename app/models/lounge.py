@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, ForeignKey, Index, String, DateTime, func
+from sqlalchemy import BigInteger, ForeignKey, Index, String, DateTime, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from app.db.base import Base
@@ -35,7 +35,7 @@ class Lounge(Base):
     posts: Mapped[list[Post]] = relationship(back_populates="lounge")
 
     __table_args__ = (
-        Index("idx_lounge_name_lower", func.lower("name"), unique=True),
+        Index("idx_lounge_name_lower", text("lower(name)"), unique=True),
         Index("idx_lounge_creator", "creator_id"),
     )
 
