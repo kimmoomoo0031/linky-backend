@@ -10,6 +10,13 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_SECRET: str = ""
     REFRESH_TOKEN_MAX_PER_USER: int = 5
 
+    UPLOAD_DIR: str = "static/uploads"
+    UPLOAD_MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
+    UPLOAD_TEMP_MAX_PER_USER: int = 20
+    UPLOAD_TEMP_EXPIRE_HOURS: int = 24
+    UPLOAD_MAX_IMAGES_PER_POST: int = 10
+    UPLOAD_BASE_URL: str = "http://localhost:8000/static/uploads"
+
     model_config = {"env_file": ".env"}
 
 
