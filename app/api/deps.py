@@ -1,4 +1,5 @@
-from fastapi import Depends, Header
+from fastapi import Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 from sqlalchemy.orm import Session
 
@@ -7,11 +8,13 @@ from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.user import User
 
+_bearer_scheme = HTTPBearer(auto_error=False)
 
-def _extract_token(authorization: str | None = Header(None, alias="Authorization")) -> str:
-    if not authorization or not authorization.startswith("Bearer "):
+
+def _extract_token(credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme)) -> str:
+    if not credentials:
         raise UnauthorizedError("COMMON_UNAUTHORIZED", "認証が必要です。")
-    return authorization[7:]
+    return credentials.credentials
 
 
 def get_current_user(
@@ -41,14 +44,14 @@ def get_current_user(
 
 
 def get_current_user_optional(
-    authorization: str | None = Header(None, alias="Authorization"),
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User | None:
     """トークンが無ければNone、あれば検証後Userを返す。"""
-    if not authorization or not authorization.startswith("Bearer "):
+    if not credentials:
         return None
 
-    token = authorization[7:]
+    token = credentials.credentials
     try:
         payload = decode_access_token(token)
     except JWTError:
