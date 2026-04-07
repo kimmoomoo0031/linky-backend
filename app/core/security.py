@@ -1,24 +1,23 @@
 import hashlib
 import hmac
 import secrets
+import uuid
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.core.config import settings
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 # ── bcrypt (パスワード) ──
 
 def hash_password(plain: str) -> str:
-    return pwd_context.hash(plain)
+    return bcrypt.hashpw(plain.encode(), bcrypt.gensalt()).decode()
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    return bcrypt.checkpw(plain.encode(), hashed.encode())
 
 
 # ── JWT (Access Token) ──
@@ -32,6 +31,7 @@ def create_access_token(
     payload = {
         "sub": str(sub),
         "role": role,
+        "jti": uuid.uuid4().hex,
         "iat": now,
         "exp": now + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         "iss": "linky-api",
@@ -60,7 +60,7 @@ def generate_refresh_token_raw() -> str:
 
 
 def hash_refresh_token(raw: str) -> str:
-    return hmac.new(
+    return hmac.HMAC(
         settings.REFRESH_TOKEN_SECRET.encode(),
         raw.encode(),
         hashlib.sha256,

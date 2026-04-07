@@ -84,13 +84,15 @@ async def http_error_handler(request: Request, exc: StarletteHTTPException) -> J
         404: "COMMON_NOT_FOUND",
         405: "COMMON_METHOD_NOT_ALLOWED",
     }
+    code = code_map.get(exc.status_code, f"COMMON_HTTP_{exc.status_code}")
     body = _build_error_body(
         trace_id=get_trace_id(),
         path=request.url.path,
         method=request.method,
-        code=code_map.get(exc.status_code, f"COMMON_HTTP_{exc.status_code}"),
+        code=code,
         message=str(exc.detail) if exc.detail else "エラーが発生しました。",
     )
+    logger.warning("HTTPError %s %s: %s", exc.status_code, code, exc.detail)
     return JSONResponse(status_code=exc.status_code, content=body)
 
 

@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
+from app.api.v1.endpoints import auth
+
 api_router = APIRouter()
 
-# 各ドメインルーターをここに登録する。
-# 例) api_router.include_router(auth.router, prefix="/auth", tags=["Auth"])
+api_router.include_router(auth.router, prefix="/auth", tags=["Auth"])
