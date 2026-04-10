@@ -27,3 +27,6 @@ class LocalCredential(Base):
     )
 
     user: Mapped[User] = relationship(back_populates="local_credential")
+
+    def change_password(self, new_hash: str) -> None:
+        self.password_hash = new_hash

@@ -172,22 +172,20 @@ def resend_verification_code(db: Session, session: EmailVerificationSession) -> 
     """コードを再発行する。(plain_code, resend_remaining) を返す。"""
     code = _generate_code()
     now = datetime.now(timezone.utc)
-    session.code_hash = _hash_code(code)
-    session.resend_count += 1
-    session.last_sent_at = now
-    session.expires_at = now + timedelta(seconds=VERIFICATION_TTL_SECONDS)
+    session.renew_code(_hash_code(code), now, VERIFICATION_TTL_SECONDS)
+    session.increment_resend()
     remaining = VERIFICATION_MAX_RESENDS - session.resend_count
     return code, remaining
 
 
 def verify_code(db: Session, session: EmailVerificationSession, code: str) -> bool:
     """コードを検証する。成功時 True, 失敗時 False。attempt_count を加算する。"""
-    session.attempt_count += 1
+    session.increment_attempt()
     if session.attempt_count >= VERIFICATION_MAX_ATTEMPTS:
-        session.locked_until = datetime.now(timezone.utc) + timedelta(seconds=VERIFICATION_LOCK_SECONDS)
+        session.lock(datetime.now(timezone.utc), VERIFICATION_LOCK_SECONDS)
 
     if _hash_code(code) == session.code_hash:
-        session.verified = True
+        session.mark_verified()
         return True
     return False
 
@@ -195,7 +193,7 @@ def verify_code(db: Session, session: EmailVerificationSession, code: str) -> bo
 def create_reset_token(db: Session, session: EmailVerificationSession) -> str:
     """パスワードリセット用の reset_token を生成し、ハッシュを保存する。raw token を返す。"""
     raw = secrets.token_urlsafe(32)
-    session.reset_token_hash = hashlib.sha256(raw.encode()).hexdigest()
+    session.set_reset_token(hashlib.sha256(raw.encode()).hexdigest())
     return raw
 
 

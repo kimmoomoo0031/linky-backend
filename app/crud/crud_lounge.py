@@ -114,7 +114,7 @@ def upsert_view(db: Session, user_id: int, lounge_id: int) -> None:
         .first()
     )
     if existing:
-        existing.viewed_at = func.now()
+        existing.update_viewed_at()
     else:
         db.add(LoungeView(user_id=user_id, lounge_id=lounge_id))
 

@@ -170,7 +170,7 @@ def password_reset(body: PasswordResetRequest, db: Session = Depends(get_db)):
         raise UnauthorizedError("AUTH_TOKEN_INVALID", "reset_tokenは期限切れか無効です。")
 
     crud_user.update_password(db, user, body.new_password)
-    session.reset_token_hash = None
+    session.invalidate_reset_token()
 
     return SuccessResponse(data=PasswordResetResponseData())
 
@@ -236,10 +236,9 @@ def verify_email(body: VerifyEmailRequest, db: Session = Depends(get_db)):
             "入力試行回数が上限を超えたか、再送信クールダウン中です。しばらくしてから再試行してください。",
         )
     elif session.locked_until and now >= session.locked_until:
-        session.attempt_count = 0
-        session.locked_until = None
+        session.unlock()
 
-    if session.is_expired():
+    if session.is_expired(now):
         raise BadRequestError("AUTH_INVALID_INPUT", "認証コードが一致しないか、有効期限が切れています。")
 
     ok = crud_auth.verify_code(db, session, body.code)

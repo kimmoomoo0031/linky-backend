@@ -33,3 +33,6 @@ class LoungeView(Base):
         UniqueConstraint("user_id", "lounge_id", name="uniq_user_lounge"),
         Index("idx_lounge_views_recent", "user_id", "viewed_at"),
     )
+
+    def update_viewed_at(self) -> None:
+        self.viewed_at = func.now()

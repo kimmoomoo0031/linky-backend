@@ -1,4 +1,3 @@
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.auth_identity import AuthIdentity
@@ -61,8 +60,7 @@ def create_local_user(
 def update_password(db: Session, user: User, new_password: str) -> None:
     cred = db.query(LocalCredential).filter(LocalCredential.user_id == user.id).first()
     if cred:
-        cred.password_hash = hash_password(new_password)
-        cred.updated_at = func.now()
+        cred.change_password(hash_password(new_password))
 
 
 def update_nickname(db: Session, user: User, nickname: str) -> None:
@@ -73,9 +71,11 @@ def withdraw_user(db: Session, user: User, reason: str, reason_text: str | None 
     """退会処理。User 状態変更 + auth_identities 無効化 + refresh_tokens 全 revoke。"""
     user.withdraw(reason, reason_text)
 
-    db.query(AuthIdentity).filter(AuthIdentity.user_id == user.id).update({"active": False})
+    for identity in db.query(AuthIdentity).filter(AuthIdentity.user_id == user.id).all():
+        identity.deactivate()
 
-    db.query(RefreshToken).filter(
+    for rt in db.query(RefreshToken).filter(
         RefreshToken.user_id == user.id,
         RefreshToken.revoked.is_(False),
-    ).update({"revoked": True})
+    ).all():
+        rt.revoke()

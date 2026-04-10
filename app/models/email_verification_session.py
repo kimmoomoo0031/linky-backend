@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import BigInteger, Boolean, Index, Integer, String, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -40,3 +40,24 @@ class EmailVerificationSession(Base):
 
     def increment_resend(self) -> None:
         self.resend_count += 1
+
+    def lock(self, now: datetime, lock_seconds: int) -> None:
+        self.locked_until = now + timedelta(seconds=lock_seconds)
+
+    def unlock(self) -> None:
+        self.attempt_count = 0
+        self.locked_until = None
+
+    def mark_verified(self) -> None:
+        self.verified = True
+
+    def renew_code(self, new_code_hash: str, now: datetime, ttl_seconds: int) -> None:
+        self.code_hash = new_code_hash
+        self.last_sent_at = now
+        self.expires_at = now + timedelta(seconds=ttl_seconds)
+
+    def set_reset_token(self, token_hash: str) -> None:
+        self.reset_token_hash = token_hash
+
+    def invalidate_reset_token(self) -> None:
+        self.reset_token_hash = None

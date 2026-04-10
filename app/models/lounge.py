@@ -50,3 +50,6 @@ class Lounge(Base):
         if len(description) < 5 or len(description) > 200:
             raise ValueError("紹介文は5〜200文字")
         return description
+
+    def is_owned_by(self, user_id: int) -> bool:
+        return self.creator_id == user_id
